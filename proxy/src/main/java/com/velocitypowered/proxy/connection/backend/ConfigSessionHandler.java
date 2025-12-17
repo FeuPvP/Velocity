@@ -109,7 +109,7 @@ public class ConfigSessionHandler implements MinecraftSessionHandler {
   }
 
   @Override
-  public boolean beforeHandle() {
+  public boolean beforeHandle(Object msg) {
     if (!serverConn.isActive()) {
       // Obsolete connection
       serverConn.disconnect();

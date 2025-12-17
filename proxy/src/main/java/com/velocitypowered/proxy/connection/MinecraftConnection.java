@@ -146,7 +146,7 @@ public class MinecraftConnection extends ChannelInboundHandlerAdapter {
         return;
       }
 
-      if (activeSessionHandler.beforeHandle()) {
+      if (activeSessionHandler.beforeHandle(msg)) {
         return;
       }
 

@@ -49,6 +49,7 @@ import com.velocitypowered.proxy.protocol.packet.KeepAlivePacket;
 import com.velocitypowered.proxy.protocol.packet.PluginMessagePacket;
 import com.velocitypowered.proxy.protocol.packet.ResourcePackResponsePacket;
 import com.velocitypowered.proxy.protocol.packet.RespawnPacket;
+import com.velocitypowered.proxy.protocol.packet.ServerPingPacket;
 import com.velocitypowered.proxy.protocol.packet.ServerboundCookieResponsePacket;
 import com.velocitypowered.proxy.protocol.packet.TabCompleteRequestPacket;
 import com.velocitypowered.proxy.protocol.packet.TabCompleteResponsePacket;
@@ -78,6 +79,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,6 +88,7 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import net.kyori.adventure.key.Key;
@@ -116,6 +119,9 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
 
   private final ConnectedPlayer player;
   private boolean spawned = false;
+  private boolean switchConfirmed = true;
+  private int switchConfirmationId;
+  private final Int2IntOpenHashMap pingsWaitingForPongs = new Int2IntOpenHashMap();
   private final List<UUID> serverBossBars = new ArrayList<>();
   private final Queue<PluginMessagePacket> loginPluginMessages = new ConcurrentLinkedQueue<>();
   private final AtomicLong loginPluginMessagesBytes = new AtomicLong();
@@ -151,6 +157,8 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
       this.chatHandler = new LegacyChatHandler(this.server, this.player);
       this.commandHandler = new LegacyCommandHandler(this.player, this.server);
     }
+
+    this.pingsWaitingForPongs.defaultReturnValue(0);
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -220,6 +228,33 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
       return false;
     }
     loginPluginMessages.add(packet);
+    return true;
+  }
+
+  @Override
+  public boolean beforeHandle(Object msg) {
+    // Do not leak packets that were directed at the previous server
+    return !switchConfirmed && !(msg instanceof ServerPingPacket);
+  }
+
+  @Override
+  public boolean handle(ServerPingPacket packet) {
+    // Decrease the waiting for ping
+    int id = packet.getAction();
+    int value = pingsWaitingForPongs.addTo(id, -1);
+    if (value <= 1) {
+      pingsWaitingForPongs.remove(id);
+    }
+
+    // We've confirmed our switch, we can just forward this packet
+    if (switchConfirmed) {
+      return false;
+    }
+
+    // Not fully switched, check for client switch confirmation and don't forward
+    if (id == switchConfirmationId) {
+      switchConfirmed = true;
+    }
     return true;
   }
 
@@ -635,6 +670,11 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
       // Required for Legacy Forge
       player.getPhase().onFirstJoin(player);
     } else {
+      switchConfirmed = false;
+      switchConfirmationId = getUnusedPing();
+      this.handleClientBoundPing(switchConfirmationId); // Prevent using this again while not accepted
+      player.getConnection().delayedWrite(new ServerPingPacket((byte) 0, switchConfirmationId, false));
+
       // Clear tab list to avoid duplicate entries
       player.getTabList().clearAll();
 
@@ -693,6 +733,24 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
     player.getConnection().flush();
     serverMc.flush();
     destination.completeJoin();
+  }
+
+  /**
+   * This returns a ping id that the client does not have to accept yet.
+   *
+   * @return unused ping id
+   */
+  private int getUnusedPing() {
+    // Always use short range to keep compatibility with older versions
+    for (int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
+      if (!pingsWaitingForPongs.containsKey((short) i)) {
+        return i;
+      }
+    }
+
+    // The client should never be in a state where it still has to accept the whole short range
+    // But to be safe we use a fallback
+    return (short) ThreadLocalRandom.current().nextInt();
   }
 
   private void doFastClientServerSwitch(JoinGamePacket joinGame) {
@@ -899,6 +957,10 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
               request, response, ex);
           return null;
         });
+  }
+
+  public void handleClientBoundPing(int id) {
+    pingsWaitingForPongs.addTo(id, 1);
   }
 
   /**
