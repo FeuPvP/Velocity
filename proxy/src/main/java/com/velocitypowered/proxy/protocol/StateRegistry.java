@@ -87,6 +87,7 @@ import com.velocitypowered.proxy.protocol.packet.RespawnPacket;
 import com.velocitypowered.proxy.protocol.packet.ServerDataPacket;
 import com.velocitypowered.proxy.protocol.packet.ServerLoginPacket;
 import com.velocitypowered.proxy.protocol.packet.ServerLoginSuccessPacket;
+import com.velocitypowered.proxy.protocol.packet.ServerPingPacket;
 import com.velocitypowered.proxy.protocol.packet.ServerboundCookieResponsePacket;
 import com.velocitypowered.proxy.protocol.packet.ServerboundCustomClickActionPacket;
 import com.velocitypowered.proxy.protocol.packet.SetCompressionPacket;
@@ -412,6 +413,27 @@ public enum StateRegistry {
           map(0x0E, MINECRAFT_1_21_2, false),
           map(0x0F, MINECRAFT_1_21_6, false),
           map(0x10, MINECRAFT_26_1, false));
+      serverbound.register(
+          ServerPingPacket.class,
+          ServerPingPacket::new,
+          map(0x0f, MINECRAFT_1_7_2, false),
+          map(0x05, MINECRAFT_1_9, false),
+          map(0x06, MINECRAFT_1_12, false),
+          map(0x05, MINECRAFT_1_12_1, false),
+          map(0x06, MINECRAFT_1_13, false),
+          map(0x07, MINECRAFT_1_14, false),
+          map(0x1D, MINECRAFT_1_17, false),
+          map(0x1F, MINECRAFT_1_19, false),
+          map(0x20, MINECRAFT_1_19_1, false),
+          map(0x1F, MINECRAFT_1_19_3, false),
+          map(0x20, MINECRAFT_1_19_4, false),
+          map(0x23, MINECRAFT_1_20_2, false),
+          map(0x24, MINECRAFT_1_20_3, false),
+          map(0x27, MINECRAFT_1_20_5, false),
+          map(0x29, MINECRAFT_1_21_2, false),
+          map(0x2B, MINECRAFT_1_21_4, false),
+          map(0x2C, MINECRAFT_1_21_6, false),
+          map(0x2D, MINECRAFT_26_1, false));
 
       clientbound.register(
           BossBarPacket.class,
@@ -837,6 +859,26 @@ public enum StateRegistry {
           map(0x82, MINECRAFT_1_21_2, false),
           map(0x87, MINECRAFT_1_21_9, false),
           map(0x89, MINECRAFT_26_1, false));
+      clientbound.register(
+          ServerPingPacket.class,
+          ServerPingPacket::new,
+          map(0x32, MINECRAFT_1_7_2, false),
+          map(0x11, MINECRAFT_1_9, false),
+          map(0x12, MINECRAFT_1_13, false),
+          map(0x13, MINECRAFT_1_15, false),
+          map(0x12, MINECRAFT_1_16, false),
+          map(0x11, MINECRAFT_1_16_2, false),
+          map(0x30, MINECRAFT_1_17, false),
+          map(0x2D, MINECRAFT_1_19, false),
+          map(0x2F, MINECRAFT_1_19_1, false),
+          map(0x2E, MINECRAFT_1_19_3, false),
+          map(0x32, MINECRAFT_1_19_4, false),
+          map(0x33, MINECRAFT_1_20_2, false),
+          map(0x35, MINECRAFT_1_20_5, false),
+          map(0x37, MINECRAFT_1_21_2, false),
+          map(0x36, MINECRAFT_1_21_5, false),
+          map(0x3B, MINECRAFT_1_21_9, false),
+          map(0x3D, MINECRAFT_26_1, false));
     }
   },
   LOGIN {
