@@ -43,6 +43,7 @@ import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_21_5;
 import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_21_6;
 import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_21_9;
 import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_7_2;
+import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_7_6;
 import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_8;
 import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_9;
 import static com.velocitypowered.api.network.ProtocolVersion.MINECRAFT_1_9_4;
@@ -848,7 +849,7 @@ public enum StateRegistry {
           map(0x01, MINECRAFT_1_7_2, false));
       serverbound.register(
           LoginPluginResponsePacket.class, LoginPluginResponsePacket::new,
-          map(0x02, MINECRAFT_1_13, false));
+          map(0x02, MINECRAFT_1_7_6, false));
       serverbound.register(
           LoginAcknowledgedPacket.class, LoginAcknowledgedPacket::new,
           map(0x03, MINECRAFT_1_20_2, false));
@@ -871,7 +872,7 @@ public enum StateRegistry {
       clientbound.register(
           LoginPluginMessagePacket.class,
           LoginPluginMessagePacket::new,
-          map(0x04, MINECRAFT_1_13, false));
+          map(0x04, MINECRAFT_1_7_6, false));
       clientbound.register(
           ClientboundCookieRequestPacket.class, ClientboundCookieRequestPacket::new,
           map(0x05, MINECRAFT_1_20_5, false));
